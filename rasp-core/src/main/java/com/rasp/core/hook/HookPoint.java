@@ -1,5 +1,6 @@
 package com.rasp.core.hook;
 
+import com.rasp.core.context.HookEvent;
 import com.rasp.core.detector.DetectResult;
 
 /**

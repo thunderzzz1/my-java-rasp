@@ -78,10 +78,16 @@ public class CommandDetector extends AbstractDetector {
 
         // 3. 命令分隔符检测（管道、分号等）
         if (CMD_SEPARATOR.matcher(fullCommand).find()) {
-            // 检查是否包含 HTTP 请求参数
+            // 有 context → 参数关联分析
             if (context != null && context.isParamTainted(fullCommand)) {
                 return block(Severity.HIGH,
                     "Command injection: request parameter value found in command: "
+                        + truncate(fullCommand));
+            }
+            // 或无 context 但仍检测到分隔符 → 告警
+            if (context == null) {
+                return block(Severity.HIGH,
+                    "Command injection: suspicious separator in command: "
                         + truncate(fullCommand));
             }
         }

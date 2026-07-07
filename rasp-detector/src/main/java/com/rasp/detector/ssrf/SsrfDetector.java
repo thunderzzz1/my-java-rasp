@@ -59,32 +59,38 @@ public class SsrfDetector extends AbstractDetector {
 
         // 1. 危险协议检测
         if (DANGEROUS_PROTOCOLS.contains(protocol)) {
+            Map<String, Object> evidence = new HashMap<>();
+            evidence.put("url", urlStr);
+            evidence.put("protocol", protocol);
             return DetectResult.block(AttackType.SSRF, Severity.HIGH,
-                "Dangerous protocol in SSRF: " + protocol + "://" + host,
-                Map.of("url", urlStr, "protocol", protocol));
+                "Dangerous protocol in SSRF: " + protocol + "://" + host, evidence);
         }
 
         // 2. 内网 IP 检测
         if (isPrivateAddress(host)) {
+            Map<String, Object> ev2 = new HashMap<>();
+            ev2.put("url", urlStr);
+            ev2.put("host", host);
             return DetectResult.block(AttackType.SSRF, Severity.HIGH,
-                "SSRF to internal network: " + host,
-                Map.of("url", urlStr, "host", host));
+                "SSRF to internal network: " + host, ev2);
         }
 
         // 3. 云 Metadata 检测
         for (String meta : CLOUD_METADATA) {
             if (host.equals(meta) || host.contains(meta)) {
+                Map<String, Object> ev3 = new HashMap<>();
+                ev3.put("url", urlStr);
                 return DetectResult.block(AttackType.SSRF, Severity.HIGH,
-                    "SSRF to cloud metadata service: " + host,
-                    Map.of("url", urlStr));
+                    "SSRF to cloud metadata service: " + host, ev3);
             }
         }
 
         // 4. 参数关联
         if (context != null && context.isParamTainted(urlStr)) {
+            Map<String, Object> ev4 = new HashMap<>();
+            ev4.put("url", urlStr);
             return DetectResult.block(AttackType.SSRF, Severity.HIGH,
-                "URL controlled by user input: " + urlStr,
-                Map.of("url", urlStr));
+                "URL controlled by user input: " + urlStr, ev4);
         }
 
         return DetectResult.PASS;

@@ -26,8 +26,8 @@ public class SqlDetector extends AbstractDetector {
         Pattern.compile("(?i)\\bUNION\\s+(ALL\\s+)?SELECT\\b"),
         // OR 恒等式
         Pattern.compile("(?i)\\bOR\\b\\s+['\"]?\\d+['\"]?\\s*=\\s*['\"]?\\d+['\"]?"),
-        // 注释截断
-        Pattern.compile("--\\s*$", Pattern.MULTILINE),
+        // 注释截断（-- 后跟空格和任意字符）
+        Pattern.compile("--\\s+\\S"),
         Pattern.compile("/\\*!.+\\*/"),
         // DROP/TRUNCATE
         Pattern.compile("(?i)\\bDROP\\s+(TABLE|DATABASE)\\b"),

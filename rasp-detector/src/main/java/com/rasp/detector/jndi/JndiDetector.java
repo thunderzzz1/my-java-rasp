@@ -62,9 +62,11 @@ public class JndiDetector extends AbstractDetector {
         // 2. 检测远程协议
         for (String protocol : REMOTE_PROTOCOLS) {
             if (lower.startsWith(protocol + "://") || lower.startsWith(protocol + ":/")) {
+                Map<String, Object> evidence = new HashMap<>();
+                evidence.put("jndi_name", name);
+                evidence.put("protocol", protocol);
                 return DetectResult.block(AttackType.JNDI_INJECTION, Severity.HIGH,
-                    "JNDI remote object loading detected: " + truncate(name),
-                    Map.of("jndi_name", name, "protocol", protocol));
+                    "JNDI remote object loading detected: " + truncate(name), evidence);
             }
         }
 

@@ -55,10 +55,7 @@ public abstract class AbstractDetector {
      * 快速过滤：是否需要本次检测？
      */
     protected boolean preCheck(HookEvent event, RaspContext context) {
-        // 如果不是请求线程且不需要全局检测，跳过
-        if (context == null && !isGlobalDetect()) {
-            return false;
-        }
+        // 默认允许所有检测，各检测器内部自行处理 context 为 null 的情况
         return true;
     }
 
