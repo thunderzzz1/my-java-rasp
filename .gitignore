@@ -1,0 +1,38 @@
+# Maven
+target/
+*.jar
+*.war
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# RASP runtime
+rasp-log/
+rasp-alarm/
+agent.id
+
+# Node
+node_modules/
+dist/
+.env.local
+
+# Test
+*.hprof
+
+# Temp
+*.tmp
+*.swp
