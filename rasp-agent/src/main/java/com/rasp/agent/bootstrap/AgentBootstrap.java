@@ -4,7 +4,10 @@ import com.rasp.core.hook.HookPoint;
 import com.rasp.core.hook.HookRegistry;
 import com.rasp.detector.command.CommandDetector;
 import com.rasp.detector.deserialization.DeserializationDetector;
+import com.rasp.detector.file.FileDetector;
+import com.rasp.detector.jndi.JndiDetector;
 import com.rasp.detector.sql.SqlDetector;
+import com.rasp.detector.ssrf.SsrfDetector;
 
 import java.io.File;
 import java.lang.instrument.ClassFileTransformer;
@@ -112,45 +115,42 @@ public class AgentBootstrap {
     private void registerDefaultHooks() {
         HookRegistry registry = HookRegistry.getInstance();
 
-        // ===== P0: SQL 注入 =====
-        registry.register(HookPoint.builder()
-            .className("java.sql.Statement")
-            .methodName("executeQuery")
-            .handler(event -> new SqlDetector().detect(event, com.rasp.core.context.RaspContext.get()))
-            .build());
-        registry.register(HookPoint.builder()
-            .className("java.sql.Statement")
-            .methodName("executeUpdate")
-            .handler(event -> new SqlDetector().detect(event, com.rasp.core.context.RaspContext.get()))
-            .build());
-        registry.register(HookPoint.builder()
-            .className("java.sql.Statement")
-            .methodName("execute")
-            .handler(event -> new SqlDetector().detect(event, com.rasp.core.context.RaspContext.get()))
-            .build());
+        // ===== P0: SQL 注入 (3 hooks) =====
+        registerHook(registry, "java.sql.Statement", "executeQuery", new SqlDetector());
+        registerHook(registry, "java.sql.Statement", "executeUpdate", new SqlDetector());
+        registerHook(registry, "java.sql.Statement", "execute", new SqlDetector());
 
-        // ===== P0: 命令执行 =====
-        registry.register(HookPoint.builder()
-            .className("java.lang.ProcessBuilder")
-            .methodName("start")
-            .handler(event -> new CommandDetector().detect(event, com.rasp.core.context.RaspContext.get()))
-            .build());
-        registry.register(HookPoint.builder()
-            .className("java.lang.Runtime")
-            .methodName("exec")
-            .handler(event -> new CommandDetector().detect(event, com.rasp.core.context.RaspContext.get()))
-            .build());
+        // ===== P0: 命令执行 (2 hooks) =====
+        registerHook(registry, "java.lang.ProcessBuilder", "start", new CommandDetector());
+        registerHook(registry, "java.lang.Runtime", "exec", new CommandDetector());
 
-        // ===== P0: 反序列化 =====
-        registry.register(HookPoint.builder()
-            .className("java.io.ObjectInputStream")
-            .methodName("resolveClass")
-            .handler(event -> new DeserializationDetector().detect(event, com.rasp.core.context.RaspContext.get()))
-            .build());
+        // ===== P0: 反序列化 (1 hook) =====
+        registerHook(registry, "java.io.ObjectInputStream", "resolveClass", new DeserializationDetector());
+
+        // ===== P0: 文件操作 (3 hooks) =====
+        registerHook(registry, "java.io.FileInputStream", "<init>", new FileDetector());
+        registerHook(registry, "java.io.FileOutputStream", "<init>", new FileDetector());
+        registerHook(registry, "java.io.RandomAccessFile", "<init>", new FileDetector());
+
+        // ===== P1: SSRF (2 hooks) =====
+        registerHook(registry, "java.net.URL", "openConnection", new SsrfDetector());
+        registerHook(registry, "java.net.HttpURLConnection", "connect", new SsrfDetector());
+
+        // ===== P0: JNDI 注入 (1 hook) =====
+        registerHook(registry, "javax.naming.InitialContext", "lookup", new JndiDetector());
 
         if (debugMode) {
             System.out.println("[RASP Agent] Registered " + registry.getHookCount() + " hook points");
         }
+    }
+
+    private void registerHook(HookRegistry registry, String className, String methodName,
+                               com.rasp.detector.AbstractDetector detector) {
+        registry.register(HookPoint.builder()
+            .className(className)
+            .methodName(methodName)
+            .handler(event -> detector.detect(event, com.rasp.core.context.RaspContext.get()))
+            .build());
     }
 
     /**
