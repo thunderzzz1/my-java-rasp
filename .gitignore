@@ -38,3 +38,5 @@ dist/
 *.tmp
 *.swp
 build/
+node_modules/
+dist/
